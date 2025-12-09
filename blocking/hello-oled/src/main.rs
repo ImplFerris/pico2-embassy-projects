@@ -48,7 +48,7 @@ async fn main(_spawner: Spawner) {
     let mut display = Ssd1306::new(interface, DisplaySize128x64, DisplayRotation::Rotate0)
         .into_buffered_graphics_mode();
 
-    display.init().unwrap();
+    display.init().expect("failed to initialze the display");
     let text_style = MonoTextStyleBuilder::new()
         .font(&FONT_6X10)
         .text_color(BinaryColor::On)
@@ -57,9 +57,11 @@ async fn main(_spawner: Spawner) {
     defmt::info!("sending text to display");
     Text::with_baseline("Hello, Rust!", Point::new(0, 16), text_style, Baseline::Top)
         .draw(&mut display)
-        .unwrap();
+        .expect("failed to draw text into display");
 
-    display.flush().unwrap();
+    display
+        .flush()
+        .expect("failed to flush the data into display");
 
     loop {
         Timer::after_millis(100).await;
