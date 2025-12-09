@@ -38,6 +38,9 @@ async fn main(_spawner: Spawner) {
     let sda = p.PIN_18;
     let scl = p.PIN_19;
 
+    let mut i2c_config = Config::default();
+    i2c_config.frequency = 400_000; //400kHz
+
     let i2c = i2c::I2c::new_blocking(p.I2C1, scl, sda, Config::default());
 
     let interface = I2CDisplayInterface::new(i2c);
