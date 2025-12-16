@@ -29,10 +29,11 @@ async fn main(_spawner: Spawner) {
     let button = Input::new(p.PIN_15, Pull::Up);
 
     let mut blink_enabled = true;
-    let mut last_toggle_time = Instant::now();
-    let mut last_button_state = true;
-
     let mut delay = Delay;
+
+    let mut last_toggle_time = Instant::now();
+    let mut last_button_state = false;
+
     let blink_interval = Duration::from_millis(300);
 
     loop {
