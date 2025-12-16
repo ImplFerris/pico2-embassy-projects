@@ -28,16 +28,16 @@ async fn main(_spawner: Spawner) {
     let mut led = Output::new(p.PIN_25, Level::Low);
     let button = Input::new(p.PIN_15, Pull::Up);
 
-    let mut blink_led = true;
+    let mut blink_enabled = true;
     let mut delay = Delay;
 
     loop {
         if button.is_low() {
-            blink_led = !blink_led;
+            blink_enabled = !blink_enabled;
             delay.delay_ms(200);
         }
 
-        if blink_led {
+        if blink_enabled {
             led.set_high();
             delay.delay_ms(300);
             led.set_low();

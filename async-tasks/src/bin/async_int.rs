@@ -28,18 +28,18 @@ static BLINK_SIGNAL: Signal<ThreadModeRawMutex, bool> = Signal::new();
 
 #[embassy_executor::task]
 async fn blink_led(mut led: Output<'static>) {
-    let mut is_blinking = true;
+    let mut blink_enabled = true;
 
     loop {
         match select(BLINK_SIGNAL.wait(), Timer::after_millis(300)).await {
             Either::First(new_state) => {
-                is_blinking = new_state;
-                if !is_blinking {
+                blink_enabled = new_state;
+                if !blink_enabled {
                     led.set_low();
                 }
             }
             Either::Second(_) => {
-                if is_blinking {
+                if blink_enabled {
                     led.toggle();
                 }
             }
@@ -49,13 +49,13 @@ async fn blink_led(mut led: Output<'static>) {
 
 #[embassy_executor::task]
 async fn handle_button(mut button: Input<'static>) {
-    let mut is_blinking = true;
+    let mut blink_enabled = true;
 
     loop {
         button.wait_for_low().await;
         info!("button pressed");
-        is_blinking = !is_blinking;
-        BLINK_SIGNAL.signal(is_blinking);
+        blink_enabled = !blink_enabled;
+        BLINK_SIGNAL.signal(blink_enabled);
         button.wait_for_high().await;
     }
 }
