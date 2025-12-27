@@ -31,4 +31,4 @@ defmt = "1.0.1"
 defmt-rtt = "1.1.0"
 
 embedded-graphics = "0.8.1"
-ssd1306 = "0.10.0"
+ssd1306 = { version = "0.10.0", features = ["async"] }
