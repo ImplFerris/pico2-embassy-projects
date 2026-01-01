@@ -8,6 +8,7 @@ use embassy_time::Timer;
 
 // For MAX7219
 use embedded_hal_bus::spi::ExclusiveDevice;
+use max7219_display::led_matrix::display::SingleMatrix;
 
 // For Drawing shapes
 use embedded_graphics::pixelcolor::BinaryColor;
@@ -20,7 +21,6 @@ use embassy_rp::spi::{Config as SpiConfig, Spi};
 // For CS Pin
 use embassy_rp::gpio::{Level, Output};
 
-use max7219_display::led_matrix::display::SingleMatrix;
 //Panic Handler
 use panic_probe as _;
 // Defmt Logging
