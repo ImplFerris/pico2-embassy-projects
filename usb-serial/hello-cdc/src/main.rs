@@ -97,9 +97,9 @@ async fn main(spawner: Spawner) {
 #[link_section = ".bi_entries"]
 #[used]
 pub static PICOTOOL_ENTRIES: [embassy_rp::binary_info::EntryAddr; 4] = [
-    embassy_rp::binary_info::rp_program_name!(c"Blinky Example"),
+    embassy_rp::binary_info::rp_program_name!(c"Hello CDC"),
     embassy_rp::binary_info::rp_program_description!(
-        c"This example tests the RP Pico on board LED, connected to gpio 25"
+        c"Pico as USB Device"
     ),
     embassy_rp::binary_info::rp_cargo_version!(),
     embassy_rp::binary_info::rp_program_build_attribute!(),
