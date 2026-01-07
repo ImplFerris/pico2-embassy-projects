@@ -2,18 +2,19 @@
 #![no_main]
 
 use embassy_executor::Spawner;
+use embassy_rp as hal;
 use embassy_rp::block::ImageDef;
 use embassy_time::Timer;
 
 //Panic Handler
 use panic_probe as _;
 
-// Defmt Logging
-use defmt_rtt as _;
+// For USB
+use embassy_rp::{peripherals::USB, usb};
 
 // For SPI
+use embassy_rp::spi;
 use embassy_rp::spi::Spi;
-use embassy_rp::{self as hal, spi};
 use embassy_time::Delay;
 use embedded_hal_bus::spi::ExclusiveDevice;
 
@@ -23,7 +24,7 @@ use embassy_rp::gpio::{Level, Output};
 // Driver for the MFRC522
 use mfrc522::{Mfrc522, comm::blocking::spi::SpiInterface};
 
-// to prepare buffer with data before logging
+// to prepare buffer with data before writing into USB serial
 use core::fmt::Write;
 use heapless::String;
 
@@ -31,6 +32,25 @@ use heapless::String;
 #[unsafe(link_section = ".start_block")]
 #[used]
 pub static IMAGE_DEF: ImageDef = hal::block::ImageDef::secure_exe();
+
+embassy_rp::bind_interrupts!(struct Irqs {
+    USBCTRL_IRQ => usb::InterruptHandler<USB>;
+});
+
+#[embassy_executor::task]
+async fn logger_task(usb: embassy_rp::Peri<'static, embassy_rp::peripherals::USB>) {
+    let driver = embassy_rp::usb::Driver::new(usb, Irqs);
+
+    embassy_usb_logger::run!(1024, log::LevelFilter::Info, driver);
+}
+
+fn print_hex(data: &[u8]) {
+    let mut buff: String<64> = String::new();
+    for &d in data.iter() {
+        write!(buff, "{:02x} ", d).expect("failed to write byte into buffer");
+    }
+    log::info!("{}", buff);
+}
 
 fn read_sector<E, COMM>(
     uid: &mfrc522::Uid,
@@ -53,17 +73,12 @@ where
     Ok(())
 }
 
-fn print_hex(data: &[u8]) {
-    let mut buff: String<64> = String::new();
-    for &d in data.iter() {
-        write!(buff, "{:02x} ", d).expect("failed to write byte into buffer");
-    }
-    defmt::println!("{}", buff);
-}
-
 #[embassy_executor::main]
-async fn main(_spawner: Spawner) {
+async fn main(spawner: Spawner) {
     let p = embassy_rp::init(Default::default());
+
+    spawner.must_spawn(logger_task(p.USB));
+    Timer::after_secs(3).await;
 
     let miso = p.PIN_0;
     let cs_pin = Output::new(p.PIN_1, Level::High);
@@ -74,23 +89,31 @@ async fn main(_spawner: Spawner) {
     config.frequency = 1000_000;
 
     let spi_bus = Spi::new_blocking(p.SPI0, clk, mosi, miso, config);
-
     let spi = ExclusiveDevice::new(spi_bus, cs_pin, Delay).expect("Failed to get exclusive device");
-
     let itf = SpiInterface::new(spi);
 
-    Timer::after_millis(100).await;
+    log::info!("Initializing MFRC522...");
 
-    let mut rfid = Mfrc522::new(itf)
-        .init()
-        .expect("failed to initialize the RFID reader");
-    defmt::info!("Initialized RFID reader");
+    let mut rfid = match Mfrc522::new(itf).init() {
+        Ok(rfid) => {
+            log::info!("MFRC522 initialized successfully");
+            rfid
+        }
+        Err(e) => {
+            log::error!("Failed to initialize MFRC522: {:?}", e);
+            loop {
+                Timer::after_secs(1).await;
+            }
+        }
+    };
+
+    log::info!("Waiting for RFID");
 
     loop {
         if let Ok(atqa) = rfid.reqa() {
             if let Ok(uid) = rfid.select(&atqa) {
                 if let Err(e) = read_sector(&uid, 0, &mut rfid) {
-                    defmt::error!("Error reading sector: {:?}", e);
+                    log::error!("Error reading sector: {:?}", e);
                 }
                 let _ = rfid.hlta();
                 let _ = rfid.stop_crypto1();
@@ -107,7 +130,7 @@ async fn main(_spawner: Spawner) {
 #[unsafe(link_section = ".bi_entries")]
 #[used]
 pub static PICOTOOL_ENTRIES: [embassy_rp::binary_info::EntryAddr; 4] = [
-    embassy_rp::binary_info::rp_program_name!(c"read-blocks"),
+    embassy_rp::binary_info::rp_program_name!(c"blocks-over-usb"),
     embassy_rp::binary_info::rp_program_description!(c"your program description"),
     embassy_rp::binary_info::rp_cargo_version!(),
     embassy_rp::binary_info::rp_program_build_attribute!(),

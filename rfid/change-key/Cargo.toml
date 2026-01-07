@@ -1,5 +1,5 @@
 [package]
-name = "rfid-uid"
+name = "change-key"
 version = "0.2.0"
 edition = "2024"
 
@@ -32,3 +32,4 @@ defmt-rtt = "1.1.0"
 
 mfrc522 = "0.8.0"
 embedded-hal-bus = "0.3.0"
+heapless = { version = "0.9.2", features = ["defmt"] }

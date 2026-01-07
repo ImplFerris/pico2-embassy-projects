@@ -64,7 +64,7 @@ async fn main(_spawner: Spawner) {
 #[unsafe(link_section = ".bi_entries")]
 #[used]
 pub static PICOTOOL_ENTRIES: [embassy_rp::binary_info::EntryAddr; 4] = [
-    embassy_rp::binary_info::rp_program_name!(c"rfid-uid"),
+    embassy_rp::binary_info::rp_program_name!(c"print-uid"),
     embassy_rp::binary_info::rp_program_description!(c"your program description"),
     embassy_rp::binary_info::rp_cargo_version!(),
     embassy_rp::binary_info::rp_program_build_attribute!(),
