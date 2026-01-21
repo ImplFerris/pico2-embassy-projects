@@ -33,7 +33,7 @@ bind_interrupts!(struct Irqs {
 async fn main(_spawner: Spawner) {
     let p = embassy_rp::init(Default::default());
 
-    // ADC Setup for thermistor
+    // ADC Setup
     let mut adc = Adc::new(p.ADC, Irqs, AdcConfig::default());
 
     let mut vrx_pin = Channel::new_pin(p.PIN_27, Pull::None);
